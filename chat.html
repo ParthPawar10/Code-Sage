@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Powered code review Assistant</title>
+    <style>
+        :root {
+            --primary: #202123;
+            --overhover: hsla(240, 9%, 59%, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: courier;
+        }
+
+        nav {
+            height: 50px;
+            background: var(--primary);
+            color: white;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+        }
+
+        nav div {
+            margin: 0 20px;
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .ham-menu {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .ham-menu span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            margin-bottom: 5px;
+            position: relative;
+            background: black;
+            border-radius: 3px;
+            z-index: 1;
+            transform-origin: 4px 0px;
+            transition: transform 0.5s cubic-bezier(0.77, 0.2, 0.05, 1),
+                background 0.5s cubic-bezier(0.77, 0.2, 0.05, 1), opacity 0.55s ease;
+        }
+
+        .ham-menu:hover span {
+            background: white;
+        }
+
+        #main {
+            display: flex;
+        }
+
+        /*Side Nav*/
+        #sidenav {
+            height: 100vh;
+            width: 20rem;
+            background-color: var(--primary);
+            font-size: 1rem;
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            margin: 0;
+            z-index: 11;
+        }
+
+        #sidenav .sidenav-content {
+            padding: 0.5rem;
+        }
+
+        #close {
+            position: absolute;
+            right: -40px;
+            background: var(--primary);
+            color: white;
+            border: 1px solid grey;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            width: 40px;
+            height: 40px;
+        }
+
+        #close span {
+            width: 40px;
+            height: 40px;
+            position: relative;
+        }
+
+        #close span:before,
+        #close span:after {
+            position: absolute;
+            content: " ";
+            top: -16px;
+            left: -1px;
+            height: 33px;
+            width: 3px;
+            background-color: black;
+        }
+
+        #close span:before {
+            transform: rotate(45deg);
+        }
+
+        #close span:after {
+            transform: rotate(-45deg);
+        }
+
+        #close:hover span:after,
+        #close:hover span:before {
+            background: white;
+        }
+
+        #new-chat-btn {
+            background: var(--primary);
+            color: white;
+            border: 1px solid grey;
+            border-radius: 5px;
+            width: 100%;
+            cursor: pointer;
+            text-align: start;
+            padding: 0.7rem;
+            font-size: inherit;
+        }
+
+        #new-chat-btn:hover {
+            background: var(--overhover);
+        }
+
+        .new-chat {
+            cursor: pointer;
+        }
+
+        .saved-chats {
+            margin: 0.5rem 0;
+        }
+
+        .saved-chats p {
+            padding: 0.8rem;
+            margin: 3px 0;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .saved-chats p:hover {
+            background: var(--overhover);
+        }
+
+        .saved-chats .selected {
+            padding: 0.8rem;
+            background: var(--overhover);
+            margin: 3px 0;
+            border-radius: 5px;
+        }
+
+        .config {
+            margin: 0.5rem 0;
+            position: absolute;
+            bottom: 0;
+            width: inherit;
+            background: var(--primary);
+        }
+
+        .config p {
+            padding: 0.7rem;
+            cursor: pointer;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        .config p:hover {
+            background: var(--overhover);
+        }
+
+        .config hr {
+            width: 19rem;
+        }
+
+        /*Main Content Body*/
+        #content-body {
+            height: 100vh;
+            background-color: rgb(83, 81, 152);
+            text-align: center;
+            margin-left: 20rem;
+            flex: 1;
+        }
+
+        #messages {
+            padding-bottom: 100px;
+        }
+
+        .message-div {
+            display: flex;
+            margin: 10px auto;
+            max-width: 800px;
+            justify-content: start;
+        }
+
+        .user-message {
+            background: ;
+            padding: 10px;
+        }
+
+        .gpt-message {
+            background: rgb(94, 94, 129);
+            padding: 10px;
+        }
+
+        .message-profile-pic {
+            margin-right: 20px;
+        }
+
+        .message-content {
+            text-align: start;
+            margin-top: 5px;
+        }
+
+        .message-content p {
+            margin-bottom: 20px;
+        }
+
+        #chat-section {
+            width: -webkit-fill-available;
+            height: 130px;
+            background-image: linear-gradient(to bottom, transparent 10%, rgb(36, 32, 32) 90%);
+            position: fixed;
+            bottom: 0;
+            color: white;
+            text-align: center;
+            line-height: 130px;
+        }
+
+        #chat-section div {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        #chat-section input {
+            padding: 0.9rem;
+            border-radius: 5px;
+            border: 0.1px solid grey;
+            width: 90%;
+            font-size: 20px;
+            box-shadow: 0 0 7px 0px grey;
+        }
+
+        #chat-section input:focus {
+            outline: none;
+        }
+
+        @media screen and (max-width: 800px) {
+            nav {
+                display: flex;
+            }
+
+            #close {
+                display: block;
+            }
+
+            #sidenav {
+                position: fixed;
+                left: -400px;
+            }
+
+            #content-body {
+                margin: 50px 0 0 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div onclick="handleMenuOpen()" class="ham-menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div>Old conversation 1</div>
+        <div class="new-chat" onclick="startNewChat()">+</div>
+    </nav>
+
+    <div id="main">
+        <div id="sidenav">
+            <div class="sidenav-content">
+                <button id="close" onclick="handleMenuClose()"><span></span></button>
+                <button id="new-chat-btn" onclick="startNewChat()">+ New chat</button>
+                <div class="saved-chats">
+                    <p class="selected" onclick="showConversation(1)">Old conversation 1</p>
+                    <p onclick="showConversation(2)">Old conversation 2</p>
+                </div>
+                <div class="config">
+                    <hr />
+                    <p onclick="clearConversation()">Clear conversations</p>
+                    <p onclick="toggleDarkMode()">Dark mode</p>
+                    <p>Update & FAQs</p>
+                    <p onclick="logout()">Log out</p>
+                </div>
+            </div>
+        </div>
+        <div id="content-body">
+            <div id="messages">
+                <!-- Initial conversation messages -->
+                <div class="user-message message">
+                    <div class="message-div">
+                        <div class="message-profile-pic"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/900px-ChatGPT_logo.svg.png" height="30" width='30' /></div>
+                        <div class="message-content">
+                            <p>Hi This is Ai-Powered code review Assisant ! How Can I Help You?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Chat input section -->
+            <div id="chat-section">
+                <div><input type="text" id="user-input" onkeypress="handleKeyPress(event)" /></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleMenuOpen() {
+            document
+                .getElementById("sidenav")
+                .setAttribute("style", "display:block;left:0;top:0;transition: 0.5s;");
+        }
+
+        function handleMenuClose() {
+            document
+                .getElementById("sidenav")
+                .setAttribute("style", "left:-400px;transition:0.5s;");
+        }
+
+        function startNewChat() {
+            const messagesDiv = document.getElementById('messages');
+            // Remove all child nodes (messages) from the messages container
+            while (messagesDiv.firstChild) {
+                messagesDiv.removeChild(messagesDiv.firstChild);
+            }
+            alert("New chat started!");
+        }
+
+        function showConversation(conversationNumber) {
+            alert("Showing conversation " + conversationNumber);
+        }
+
+        function clearConversation() {
+            const messagesDiv = document.getElementById('messages');
+            // Remove all child nodes (messages) from the messages container
+            while (messagesDiv.firstChild) {
+                messagesDiv.removeChild(messagesDiv.firstChild);
+            }
+            alert("Conversation cleared!");
+        }
+
+        function toggleDarkMode() {
+            alert("Dark mode toggled!");
+        }
+
+        function logout() {
+            alert("Logged out! Redirecting to login page...");
+            window.location.href = "login.html";
+        }
+
+        async function performCodeReview(code) {
+            const response = await fetch('https://api.openai.com/v1/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer sk-proj-TPOWjdn6LPIrwzkAR0W1T3BlbkFJwqrNUvjr1H4FegJseqDS' // Replace YOUR_API_KEY_HERE with your actual API key
+                },
+                body: JSON.stringify({
+                    model: 'text-davinci-002', // You can experiment with different models for better results
+                    prompt: `Code review: ${code}`,
+                    max_tokens: 50 // Adjust this based on the length of the response you expect
+                })
+            });
+
+            const data = await response.json();
+            const reviewMessage = data.choices[0].text.trim();
+            displayMessage(reviewMessage, 'gpt');
+        }
+
+        function simulateResponse(userInput) {
+            setTimeout(() => {
+                performCodeReview(userInput); // Call performCodeReview with user's input
+            }, 500);
+        }
+
+        function displayMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message-div');
+            const profilePicDiv = document.createElement('div');
+            profilePicDiv.classList.add('message-profile-pic');
+            const profilePic = document.createElement('img');
+            profilePic.src = sender === 'user' ? 'https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png' : 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/900px-ChatGPT_logo.svg.png';
+            profilePic.height = 30;
+            profilePic.width = 30;
+            profilePicDiv.appendChild(profilePic);
+            const messageContentDiv = document.createElement('div');
+            messageContentDiv.classList.add('message-content');
+            const messageParagraph = document.createElement('p');
+            messageParagraph.textContent = message;
+            messageContentDiv.appendChild(messageParagraph);
+            messageDiv.appendChild(profilePicDiv);
+            messageDiv.appendChild(messageContentDiv);
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function handleUserInput() {
+            const userInput = document.getElementById('user-input').value;
+            if (userInput.trim() !== '') {
+                displayMessage(userInput, 'user');
+                simulateResponse(userInput);
+                document.getElementById('user-input').value = '';
+            }
+        }
+
+        function performCodeReview(code) {
+            if (code.includes("def ") && code.includes("(") && code.includes(":")) {
+                displayMessage("This code defines a function.", 'gpt');
+            } else {
+                displayMessage("This code does not appear to be a function definition.", 'gpt');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                handleUserInput();
+            }
+        }
+    </script>
+</body>
+
+</html>
